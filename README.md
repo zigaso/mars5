@@ -12,7 +12,7 @@ The 5-item Medication Adherence Report Scale (MARS-5) is a reliable and valid qu
 
 The manuscript resulting from this study is currently under review.
 
-This repository provides the code used to obtain study results. However, due to sensitive patient information **the data used in this study cannot be made publicly available**.
+This repository provides the code used to obtain study results. However, due to sensitive patient information **the data used in this study cannot be made publicly available**. Therefore, data regarding DMF dispenses can only be transmitted to the researcher who signed the contract on non-disclosure of data. Individual requests for the data can be sent to the NIPH (Metka Zaletel, [metka.zaletel@nijz.si](mailto:metka.zaletel@nijz.si)).
 
 ---
 ## Code
@@ -22,38 +22,27 @@ The code was developed in programming language R (version `3.3.0`) and executed 
 The file `MARS_MS.R` contains all the codes necessary to reproduce results in the present study. The libraries required to run the code are listed in the preamble of the R script. 
 
 
-Please modify the code by including your data in the following two lines: 
+Please modify the code by including your data in the following three lines: 
 ```R
 dfPts_mars <- xl.read.file( , password =)
 dfRx_mars <- xl.read.file(, password =)
+dfPts_mars_C <- xl.read.file(, password = )
 ```
 
 Please refer to the [Data organization](#data-organization) section in order to see how to prepare the data files.
 
-**ADD FURTHER NOTES ABOUT THE CODE IF NECESSARY**
-
 ---
 ## Data organization
 
-The data should be organized into two Excel files, e.g.:
+The data should be organized into three Excel files, e.g.:
 
-- *pts.xlsx*: NEED TO ADD GENERAL DESCRIPTION
-- *rx.xlsx*: NEED TO ADD GENERAL DESCRIPTIONS
+- *msmars.xlsx*: GENERAL DESCRIPTION OF THE COHORT
+- *msmars-5.xlsx*: DMF DISPENSES
+- *msmars-final.xlsx*:DETAILED MARS-5 SCORE
 
-The file *pts.xlsx* should contain the following column names:
+Please see the required data structure in the enclosed Excel files.
 
-- *col1*: ADD DESCRIPTION AND FORMAT
-- *col2*: ADD DESCRIPTION AND FORMAT
-- *col3*: ADD DESCRIPTION AND FORMAT
-- *col4*: ADD DESCRIPTION AND FORMAT
-
-
-The file *rx.xlsx* should contain the following column names:
-
-- *col1*: ADD DESCRIPTION AND FORMAT
-- *col2*: ADD DESCRIPTION AND FORMAT
-- *col3*: ADD DESCRIPTION AND FORMAT
-- *col4*: ADD DESCRIPTION AND FORMAT
+Password to unlock the Excel files is available on request from Maj Jožef [mailto:majjozef@gmail.com](mailto:majjozef@gmail.com)
 
 
 ---

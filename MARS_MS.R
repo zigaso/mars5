@@ -8,13 +8,9 @@ library(haven)
 library(foreign)
 library(tidyverse)
 library(AdhereR)
-library(survival) 
-library(survminer) 
 library(excel.link) 
 library(rms)
 library(modEvA)
-library(stargazer)
-library(riskRegression)
 library(CoxR2)
 library(RColorBrewer)
 library(pwr)
@@ -33,10 +29,11 @@ library(randomForest)
 #database
 dfPts_mars <- xl.read.file( , password =)
 dfRx_mars <- xl.read.file(, password =)
+dfPts_mars_C <- xl.read.file(, password = )
 
 #DMF dispense dates
 un_dfRx_mars <- distinct(dfRx_mars, ID)
-colnames(dfRx_mars)[which(names(dfRx_mars) == 'issuedate')] <- 'DATE'
+colnames(dfRx_mars)[which(names(dfRx_mars) == 'datumizdaje')] <- 'DATE'
 dfRx_mars <- dfRx_mars[order(dfRx_mars$IDcode, dfRx_mars$DATE),]
 # df1st <- dfRx %>% group_by(IDcode) %>% filter(DATE == min(DATE)) druga opcija 
 df1st <- dfRx_mars %>% group_by(IDcode) %>%
@@ -47,14 +44,14 @@ colnames(df1st)[which(names(df1st) == 'DATE')] <- 'DATE_1st'
 #link database and dispenses
 df1stF <- df1st %>% dplyr::select(DATE_1st,ID)
 df1stF <- df1stF[order(df1stF$ID),]
-dfPts_mars <- dfPts_mars[order(dfPts_mars$IDcode),]
+dfPts_mars <- dfPts_mars[order(dfPts_mars$ID),]
 dfPts_mars2 <- dfPts_mars %>% left_join(df1stF,by="ID")
 colnames(dfPts_mars2)[which(names(dfPts_mars2) == 'ID')] <- 'PATIENT_ID'
 
 dfPts_mars2<- dfPts_mars2[order(dfPts_mars$IDcode),]
 dfRx_mars <- dfRx_mars[order(dfRx_mars$IDcode, dfRx_mars$DATE),]
-df= dfRx_mars %>% left_join(dfPts_mars2,by="IDcode")
-un_df <- distinct(df, IDcode) #patient, unique.
+df= dfRx_mars %>% left_join(dfPts_mars2,by="ID")
+un_df <- distinct(df, ID) #patient, unique.
 
 dbAdhere_mars <- df
 un_dbAdhere_mars <- distinct(dbAdhere_mars, PATIENT_ID)
@@ -82,48 +79,6 @@ dbAdhere_mars$follow_up_time_adh <- as.numeric(dbAdhere_mars$follow_up_time_adh)
 
 dbAdhere_mars$MRstart <- dbAdhere_mars$d.MR.1stControl - dbAdhere_mars$DATE_1st
 dbAdhere_mars$MRstart <- as.numeric(dbAdhere_mars$MRstart)
-
-#CMA6
-df_CMA6_episode <- CMA_per_episode(CMA="CMA6",
-                                   data=dbAdhere_mars,
-                                   ID.colname = "IDcode",
-                                   event.date.colname = "DATE",
-                                   event.duration.colname = "DURATION",
-                                   event.daily.dose.colname = "PERDAY",
-                                   medication.class.colname = "CATEGORY",
-                                   carryover.within.obs.window = TRUE,
-                                   carry.only.for.same.medication = TRUE,
-                                   consider.dosage.change = TRUE,
-                                   medication.change.means.new.treatment.episode = FALSE,
-                                   dosage.change.means.new.treatment.episode = FALSE,
-                                   maximum.permissible.gap = 60,
-                                   maximum.permissible.gap.unit = "days",
-                                   followup.window.start = 0,
-                                   followup.window.duration = 365*1.75,
-                                   followup.window.duration.unit = "days",
-                                   observation.window.start = 0,
-                                   observation.window.duration = 365*1.75,
-                                   observation.window.duration.unit = "days",
-                                   event.interval.colname = "event.interval",
-                                   gap.days.colname = "gap.days",
-                                   date.format = "%Y-%m-%d",
-                                   summary = "Base_CMA6")
-
-
-CMA6_episode <- getCMA(df_CMA6_episode)
-mean(CMA6_episode$CMA)
-sd(CMA6_episode$CMA)
-CMA6_episode = CMA6_episode %>% group_by(IDcode) %>% mutate(weighted_CMA = weighted.mean(CMA, episode.duration))
-mean(CMA6_episode$weighted_CMA)
-sd(CMA6_episode$weighted_CMA)
-CMA6_episode = CMA6_episode %>% filter(episode.ID == min(episode.ID))
-mean(CMA6_episode$weighted_CMA)
-sd(CMA6_episode$weighted_CMA)
-sum(CMA6_episode$weighted_CMA>=0.9)
-CMA6_episode_Pts <- CMA6_episode %>% left_join(dfPts_mars2,by="IDcode")
-CMA6_episode_Pts %>% group_by(naive.pts) %>% summarise(mean(weighted_CMA))
-sum(CMA6_episode_Pts$weighted_CMA>=0.9)
-sum(CMA6_episode_Pts$weighted_CMA>=0.85)
 
 #CMA7 criterion validity
 dbAdhere_mars <- dbAdhere_mars[order(dbAdhere_mars$IDcode, dbAdhere_mars$DATE),]
@@ -166,7 +121,7 @@ CMA7_MR_gap60 = CMA7_MR_gap60 %>% filter(episode.ID == min(episode.ID))
 mean(CMA7_MR_gap60$weighted_CMA)
 sd(CMA7_MR_gap60$weighted_CMA)
 sum(CMA7_MR_gap60$weighted_CMA>=0.9)
-CMA7_MR_gap60 <- CMA7_MR_gap60 %>% left_join(dfPts_mars2,by="IDcode")
+CMA7_MR_gap60 <- CMA7_MR_gap60 %>% left_join(dfPts_mars2,by="ID")
 CMA7_MR_gap60 %>% group_by(naive.pts) %>% summarise(mean(weighted_CMA))
 sum(CMA7_MR_gap60$weighted_CMA>=0.9)
 sum(CMA7_MR_gap60$weighted_CMA>=0.85)
@@ -175,20 +130,27 @@ sum(CMA7_MR_gap60$weighted_CMA>=0.85)
 CMA7_MR_gap60$episode.duration.REAL <- CMA7_MR_gap60$episode.end - CMA7_MR_gap60$episode.start
 CMA7_MR_gap60$episode.duration.REAL <- as.numeric(CMA7_MR_gap60$episode.duration.REAL)
 
-CMA6_episode_Pts <- transform(CMA6_episode_Pts, combo.MR.2ndControl = ifelse(combo.lesion.2ndControl=="DA",1,0))
 CMA7_MR_gap60 <- transform(CMA7_MR_gap60, combo.MR.2ndControl = ifelse(combo.lesion.2ndControl=="DA",1,0))
 
-CMA6_episode_Pts$status <- ifelse(CMA6_episode_Pts$weighted_CMA>=0.85,1,0)
-dfPts_mars2$status <- as.factor(dfPts_mars2$status)
+CMA7_MR_gap60$status <- ifelse(CMA7_MR_gap60$weighted_CMA>=0.85,1,0)
+CMA7_MR_gap60$status <- as.factor(CMA7_MR_gap60$status)
 
-dfPts_mars$status <- ifelse(CMA6_episode_Pts$CMA>=0.85,1,0)
-dfPts_mars2$status <- as.factor(dfPts_mars2$status)
+CMA7_MR_gap60$status2<- ifelse(CMA7_MR_gap60$weighted_CMA>=0.90,1,0)
+CMA7_MR_gap60$status2 <- as.factor(CMA7_MR_gap60$status2)
 
-dfPts_mars$status2<- ifelse(CMA6_episode_Pts$CMA>=0.90,1,0)
-dfPts_mars2$status2 <- as.factor(dfPts_mars2$status2)
-
-CMA6_episode_Pts$status2<- ifelse(CMA6_episode_Pts$weighted_CMA>=0.90,1,0)
-dfPts_mars2$status2 <- as.factor(dfPts_mars2$status2)
+#descriptive statistics
+mean(CMA7_MR_gap60$MARS.1)
+sd(CMA7_MR_gap60$MARS.1)
+mean(CMA7_MR_gap60$MARS.2)
+sd(CMA7_MR_gap60$MARS.2)
+mean(CMA7_MR_gap60$BMQ.gen)
+sd(CMA7_MR_gap60$BMQ.gen)
+mean(CMA7_MR_gap60$BMQ2.gen)
+sd(CMA7_MR_gap60$BMQ2.gen)
+mean(CMA7_MR_gap60$BMQ1.spec)
+sd(CMA7_MR_gap60$BMQ1.spec)
+mean(CMA7_MR_gap60$BMQ2.spec)
+sd(CMA7_MR_gap60$BMQ2.spec)
 
 #psychometric tests
 
@@ -199,9 +161,6 @@ ICC(dfPts_mars[,c("MARS.1", "MARS.2")], missing = TRUE, alpha = .05, lmer = TRUE
 alpha(dfPts_mars_C[,c("M1_2","M2_2","M3_2","M4_2","M5_2")])
 
 #criterion validity brain MRI
-CMA7_MR_gap60_Pts_final$status2MR <- ifelse(CMA7_MR_gap60_Pts_final$CMA7.gap60.MR>=0.85,1,0)
-CMA7_MR_gap60_Pts_final$status3MR <- ifelse(CMA7_MR_gap60_Pts_final$CMA7.gap60.MR>=0.90,1,0)
-
 CMA7_MR_gap60$status2MR <- ifelse(CMA7_MR_gap60$weighted_CMA>=0.85,1,0)
 CMA7_MR_gap60$status3MR <- ifelse(CMA7_MR_gap60$weighted_CMA>=0.90,1,0)
 
@@ -223,34 +182,7 @@ CMA7_MR_gap60$BMQ.spec.m <- (CMA7_MR_gap60$BMQ1.spec + CMA7_MR_gap60$BMQ2.spec)/
 mean(CMA7_MR_gap60$BMQ.spec.m)
 sd(CMA7_MR_gap60$BMQ.spec.m)
 
-#descriptive statistics
-sum(CMA6_episode_Pts$sex=='F')
-sum(CMA6_episode_Pts$sex=='M')
-mean(CMA6_episode_Pts$dur.disease.y)
-sd(CMA6_episode_Pts$dur.disease.y)
-mean(CMA6_episode_Pts$EDSS.1stRxTec)
-sd(CMA6_episode_Pts$EDSS.1stRxTec)
-mean(CMA6_episode_Pts$age)
-sd(CMA6_episode_Pts$age)
-sum(CMA6_episode_Pts$naive.pts)
-mean(CMA7_MR_gap60$MARS.1)
-sd(CMA7_MR_gap60$MARS.1)
-mean(CMA7_MR_gap60$MARS.2)
-sd(CMA7_MR_gap60$MARS.2)
-mean(CMA6_episode_Pts$BMQ.gen)
-sd(CMA6_episode_Pts$BMQ.gen)
-mean(CMA6_episode_Pts$BMQ2.gen)
-sd(CMA6_episode_Pts$BMQ2.gen)
-mean(CMA6_episode_Pts$BMQ1.spec)
-sd(CMA6_episode_Pts$BMQ1.spec)
-mean(CMA6_episode_Pts$BMQ2.spec)
-sd(CMA6_episode_Pts$BMQ2.spec)
-
 #PDC according to MARS-5 score
-CMA6_episode_Pts %>% group_by(MARS.1) %>% summarise(mean(weighted_CMA))
-CMA6_episode_Pts %>% group_by(MARS.2) %>% summarise(mean(weighted_CMA))
-CMA6_episode_Pts %>% group_by(MARS.2) %>% summarise(sd(weighted_CMA))
-
 CMA7_MR_gap60 %>% group_by(MARS.2) %>% summarise(mean(CMA))
 CMA7_MR_gap60 %>% group_by(MARS.2) %>% summarise(mean(weighted_CMA))
 CMA7_MR_gap60 %>% group_by(MARS.2) %>% summarise(sd(weighted_CMA))
@@ -272,12 +204,6 @@ summary(linear2)
 model.final_MARS.2 <- step(linear2)
 summary(model.final_MARS.2)
 
-#statistical power
-cohen.ES(test = "r", size = "small")
-r <- pwr.f2.test(u = 3, v = 40, f2 = 0.20, sig.level = 0.05, power = NULL)
-pwr.f2.test(u = 1, v = 40, f2 = 0.71, sig.level = 0.05, power = NULL)
-pwr.f2.test(u = 5, v = 40, f2 = 0.20, sig.level = 0.05, power = NULL)
-
 #correlation CMA and MARS-5
 
 #linear regression
@@ -292,24 +218,17 @@ print(correlation2)
 
 #normal distribution test
 
-shapiro.test(CMA6_episode_Pts$BMQ2.gen)
-shapiro.test(CMA6_episode_Pts$BMQ2.spec)
+shapiro.test(CMA7_MR_gap60$BMQ2.gen)
+shapiro.test(CMA7_MR_gap60$BMQ2.spec)
 
-shapiro.test(CMA6_episode_Pts$MARS.2)
-shapiro.test(CMA6_episode_Pts$MARS.m)
+shapiro.test(CMA7_MR_gap60$MARS.2)
+shapiro.test(CMA7_MR_gap60$MARS.m)
 
-shapiro.test(CMA6_episode_Pts$EDSS.1stRxTec)
+shapiro.test(CMA7_MR_gap60$EDSS.1stRxTec)
 
 #threshold
 
 #cut-off score 24
-CMA6_episode_Pts$MARS.1_24 <- ifelse(CMA6_episode_Pts$MARS.1>=24,1,0)
-CMA6_episode_Pts$MARS.1_24 <- as.factor(CMA6_episode_Pts$MARS.1_24)
-CMA6_episode_Pts$MARS.2_24 <- ifelse(CMA6_episode_Pts$MARS.2>=24,1,0)
-CMA6_episode_Pts$MARS.2_24 <- as.factor(CMA6_episode_Pts$MARS.2_24)
-CMA6_episode_Pts$MARS.m_24 <- ifelse(CMA6_episode_Pts$MARS.m>=24,1,0)
-CMA6_episode_Pts$MARS.m_24 <- as.factor(CMA6_episode_Pts$MARS.m_24)
-
 CMA7_MR_gap60$MARS.1_24MR <- ifelse(CMA7_MR_gap60$MARS.1>=24,1,0)
 CMA7_MR_gap60$MARS.1_24MR <- as.factor(CMA7_MR_gap60$MARS.1_24MR)
 CMA7_MR_gap60$MARS.2_24MR <- ifelse(CMA7_MR_gap60$MARS.2>=24,1,0)
@@ -323,8 +242,7 @@ CMA7_MR_gap60 %>% group_by(MARS.2_24MR) %>% summarise(sd(MARS.2))
 sum(CMA7_MR_gap60$MARS.2_24MR==1)
 sum(CMA7_MR_gap60$MARS.2_24MR==0)
 
-
-#linearna regresija criterion validity BMQ
+#linear regression criterion validity BMQ
 model_BMQ11 <- glm(BMQ2.gen ~ MARS.2  + age +sex + dur.disease.y + EDSS.1stRxTec + naive.pts, data = CMA7_MR_gap60, family = "gaussian")
 summary(model_BMQ11)
 model.final_BMQ11 <- step(model_BMQ11)
@@ -357,7 +275,6 @@ wilcox.test(CMA7_MR_gap60$MARS.2 ~ CMA7_MR_gap60$MR.diff.shrinking_lesion_volume
 
 #Mann Whitney test radiologists' examination
 wilcox.test(CMA7_MR_gap60$MARS.2 ~ CMA7_MR_gap60$combo.MR.2ndControl, exact=FALSE, paired=FALSE)
-wilcox.test(CMA6_episode_Pts$MARS.2 ~ CMA6_episode_Pts$combo.MR.2ndControl, exact=FALSE, paired=FALSE)
 
 MR <- table(CMA7_MR_gap60$MARS.2_23MR,CMA7_MR_gap60$combo.MR.2ndControl)
 chisq.test(MR)
@@ -403,12 +320,12 @@ dfPts_mars2$predictions <- prediction
 table2 <- table(ActualValue=dfPts_mars2$status, PredictedValue=prediction)
 view(table2)
 
-plot(x=CMA6_episode_Pts$MARS.2, y=CMA6_episode_Pts$status)
+plot(x=CMA7_MR_gap60$MARS.2, y=CMA7_MR_gap60$status)
 
-glm.fit <- glm(status ~ MARS.2, data=CMA6_episode_Pts, family=binomial)
-lines(CMA6_episode_Pts$MARS.2, glm.fit$fitted.values)
+glm.fit <- glm(status ~ MARS.2, data=CMA7_MR_gap60, family=binomial)
+lines(CMA7_MR_gap60$MARS.2, glm.fit$fitted.values)
 
-roc(CMA6_episode_Pts$status, glm.fit$fitted.values, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", print.thres.adj=c(15,25))
+roc(CMA7_MR_gap60$status, glm.fit$fitted.values, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", print.thres.adj=c(15,25))
 coord_list[[1]] <- coords(roc, x = "all")
 roc.info <- roc(dfPts_mars2$status, glm.fit$fitted.values, legacy.axes=TRUE)
 str(roc.info)
