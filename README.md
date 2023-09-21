@@ -2,10 +2,9 @@
 
 [![CC BY 4.0][cc-by-shield]][cc-by]
 
----
 [About](#about) | [Code](#code) | [Data organization](#data-organization) | [Citation info](#citation-info) | [License](#license)
 
---- 
+ 
 ## About
 
 The 5-item Medication Adherence Report Scale (MARS-5) is a reliable and valid questionnaire to evaluate adherence in patients with asthma, hypertension and diabetes. So far, validity has not been determined for persons with multiple sclerosis (MS). The aim of this study was to establish criterion validity of the MARS-5 in persons with MS.
@@ -14,7 +13,7 @@ The manuscript resulting from this study is currently under review.
 
 This repository provides the code used to obtain study results. However, due to sensitive patient information **the data used in this study cannot be made publicly available**. Therefore, data regarding DMF dispenses can only be transmitted to the researcher who signed the contract on non-disclosure of data. Individual requests for the data can be sent to the NIPH (Metka Zaletel, [metka.zaletel@nijz.si](mailto:metka.zaletel@nijz.si)).
 
----
+
 ## Code
 
 The code was developed in programming language R (version `3.3.0`) and executed in [R Studio](https://posit.co/download/rstudio-desktop/) (version `2023.06.2+561`).
@@ -31,7 +30,7 @@ dfPts_mars_C <- xl.read.file(, password = )
 
 Please refer to the [Data organization](#data-organization) section in order to see how to prepare the data files.
 
----
+
 ## Data organization
 
 The data should be organized into three Excel files, e.g.:
@@ -45,7 +44,7 @@ Please see the required data structure in the enclosed Excel files.
 Password to unlock the Excel files is available on request from Maj Jožef [mailto:majjozef@gmail.com](mailto:majjozef@gmail.com)
 
 
----
+
 ## Citation
 
 If you find this work interesting or re-use our code for your purposes we kindly ask you to cite the following paper in your publications:
@@ -69,7 +68,7 @@ If using BibTex please cite this paper as:
 ```
 
 
----
+
 
 ## License
 
